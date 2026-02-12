@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Valentine Surprise</title>
+  <style>
+    :root {
+      --bg1: #ff9a9e;
+      --bg2: #fad0c4;
+      --card: rgba(255, 255, 255, 0.2);
+      --text: #ffffff;
+      --btn-yes: #ff4d6d;
+      --btn-no: #6c757d;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--bg1), var(--bg2));
+      overflow: hidden;
+    }
+
+    .container {
+      width: min(90vw, 700px);
+      text-align: center;
+      background: var(--card);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 24px;
+      padding: 50px 24px 80px;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+      position: relative;
+    }
+
+    h1 {
+      color: var(--text);
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      margin-bottom: 36px;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .button-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      min-height: 80px;
+      position: relative;
+    }
+
+    button {
+      border: none;
+      border-radius: 14px;
+      padding: 14px 30px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+      cursor: pointer;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      user-select: none;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 18px rgba(0, 0, 0, 0.25);
+    }
+
+    #yesBtn {
+      background: var(--btn-yes);
+    }
+
+    #noBtn {
+      background: var(--btn-no);
+      position: relative; /* starts in normal flow, becomes "free-moving" via transform */
+      transition: transform 0.12s linear;
+    }
+
+    .message {
+      margin-top: 24px;
+      color: #fff;
+      font-size: 1.2rem;
+      font-weight: 600;
+      min-height: 1.5em;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+    }
+  </style>
+</head>
+<body>
+  <main class="container" id="container">
+    <h1>Will You Be My Valentine?</h1>
+
+    <div class="button-row">
+      <button id="yesBtn" aria-label="Yes, one hundred percent">100%</button>
+      <button id="noBtn" aria-label="No">No</button>
+    </div>
+
+    <p class="message" id="message"></p>
+  </main>
+
+  <script>
+    const container = document.getElementById("container");
+    const yesBtn = document.getElementById("yesBtn");
+    const noBtn = document.getElementById("noBtn");
+    const message = document.getElementById("message");
+
+    // current offset of the "No" button (applied through CSS transform)
+    let offsetX = 0;
+    let offsetY = 0;
+
+    // how close mouse has to be before the button runs away (in px)
+    const triggerDistance = 200;
+
+    // movement multiplier
+    const runStrength = 30;
+
+    // keep the no button within reasonable bounds inside the container
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    // Mouse move handler on the whole window for better responsiveness
+    window.addEventListener("mousemove", (e) => {
+      const noRect = noBtn.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+
+      // Button center
+      const btnCenterX = noRect.left + noRect.width / 2;
+      const btnCenterY = noRect.top + noRect.height / 2;
+
+      // Vector from mouse to button
+      const dx = btnCenterX - e.clientX;
+      const dy = btnCenterY - e.clientY;
+
+      const distance = Math.hypot(dx, dy);
+
+      // If mouse is close enough, move button away
+      if (distance < triggerDistance) {
+        // normalize direction (avoid divide-by-zero)
+        const nx = dx / (distance || 1);
+        const ny = dy / (distance || 1);
+
+        // bigger push when mouse is very close
+        const push = ((triggerDistance - distance) / triggerDistance) * runStrength + 8;
+
+        offsetX += nx * push;
+        offsetY += ny * push;
+
+        // boundaries relative to starting position
+        const maxLeft = -(noRect.left - containerRect.left - 10);
+        const maxRight = (containerRect.right - noRect.right - 10);
+        const maxUp = -(noRect.top - containerRect.top - 10);
+        const maxDown = (containerRect.bottom - noRect.bottom - 10);
+
+        offsetX = clamp(offsetX, maxLeft, maxRight);
+        offsetY = clamp(offsetY, maxUp, maxDown);
+
+        noBtn.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+      }
+    });
+
+    yesBtn.addEventListener("click", () => {
+      message.textContent = "YAY ❤️ I love you!";
+    });
+
+    noBtn.addEventListener("click", () => {
+      message.textContent = "Nice try 😄";
+    });
+  </script>
+</body>
+</html>

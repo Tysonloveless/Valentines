@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Valentine Surprise</title>
+  <style>
+    :root {
+      --bg1: #ff9a9e;
+      --bg2: #fad0c4;
+      --card: rgba(255, 255, 255, 0.2);
+      --text: #ffffff;
+      --btn-yes: #ff4d6d;
+      --btn-no: #6c757d;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--bg1), var(--bg2));
+      overflow: hidden;
+    }
+
+    .container {
+      width: min(92vw, 780px);
+      text-align: center;
+      background: var(--card);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 24px;
+      padding: 50px 24px 80px;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+      position: relative;
+    }
+
+    h1 {
+      color: var(--text);
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      margin-bottom: 36px;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .button-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      min-height: 110px;
+      position: relative;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: none;
+      border-radius: 14px;
+      padding: 14px 30px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #fff;
+      cursor: pointer;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+      transition: transform 0.12s linear, box-shadow 0.2s ease;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    button:hover {
+      box-shadow: 0 10px 18px rgba(0, 0, 0, 0.25);
+    }
+
+    #yesBtn {
+      background: var(--btn-yes);
+    }
+
+    #noBtn {
+      background: var(--btn-no);
+      position: relative;
+      max-width: min(80vw, 520px);
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+
+    .message {
+      margin-top: 24px;
+      color: #fff;
+      font-size: 1.2rem;
+      font-weight: 600;
+      min-height: 1.5em;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+    }
+  </style>
+</head>
+<body>
+  <main class="container" id="container">
+    <h1>Will You Be My Valentine?</h1>
+
+    <div class="button-row">
+      <button id="yesBtn" aria-label="Yes, one hundred percent">100%</button>
+      <button id="noBtn" aria-label="No">No</button>
+    </div>
+
+    <p class="message" id="message"></p>
+  </main>
+
+  <script>
+    const container = document.getElementById("container");
+    const yesBtn = document.getElementById("yesBtn");
+    const noBtn = document.getElementById("noBtn");
+    const message = document.getElementById("message");
+
+    const noTexts = [
+      "No",
+      "Nice Try",
+      "Still Going For It",
+      "The Yes Button Is Right There",
+      "Are You Really Wanting This?",
+      "I'm Not Letting You",
+      "What If I Shrink Every Time You Try?",
+      "Smaller",
+      "And smaller",
+      "Tiny",
+      "Until",
+      "I",
+      "Disappear"
+    ];
+
+    let textIndex = 0;                   // current phrase index for No button
+    let sizeModeActive = false;          // turns on once the cycle completes
+    let yesScale = 1;                    // Yes button scale
+    let noScale = 1;                     // No button scale
+
+    let offsetX = 0;                     // No button movement x
+    let offsetY = 0;                     // No button movement y
+
+    const triggerDistance = 140;
+    const runStrength = 50;
+
+    // Size tuning
+    const yesGrowStep = 0.1;            // +10% each trigger in size mode
+    const noShrinkStep = 0.1;           // -10% each trigger in size mode
+    const yesMaxScale = 2.3;
+    const noMinScale = 0.1;
+
+    // Prevent cycling multiple times per single near-hover
+    let isNear = false;
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function setNoText(text) {
+      noBtn.textContent = text;
+      noBtn.setAttribute("aria-label", text);
+    }
+
+    function updateButtonScales() {
+      // Keep motion + size on the No button
+      noBtn.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${noScale})`;
+      // Only size on Yes button
+      yesBtn.style.transform = `scale(${yesScale})`;
+    }
+
+    function handleTextAndSizeProgression() {
+      // If we've finished the phrase cycle, activate size mode.
+      if (textIndex === noTexts.length - 1) {
+        // Next trigger after "I'm Not Letting You":
+        // reset text to "No" and start size changes.
+        textIndex = 0;
+        setNoText(noTexts[textIndex]);
+        sizeModeActive = true;
+      } else {
+        // Continue normal text cycling
+        textIndex++;
+        setNoText(noTexts[textIndex]);
+      }
+
+      // If size mode is active, grow/shrink on every new trigger
+      if (sizeModeActive) {
+        yesScale = clamp(yesScale + yesGrowStep, 1, yesMaxScale);
+        noScale = clamp(noScale - noShrinkStep, noMinScale, 1);
+      }
+    }
+
+    window.addEventListener("mousemove", (e) => {
+      const noRect = noBtn.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+
+      const btnCenterX = noRect.left + noRect.width / 2;
+      const btnCenterY = noRect.top + noRect.height / 2;
+
+      const dx = btnCenterX - e.clientX;
+      const dy = btnCenterY - e.clientY;
+      const distance = Math.hypot(dx, dy);
+
+      if (distance < triggerDistance) {
+        if (!isNear) {
+          handleTextAndSizeProgression();
+          isNear = true;
+        }
+
+        // Move No button away from mouse
+        const nx = dx / (distance || 1);
+        const ny = dy / (distance || 1);
+        const push = ((triggerDistance - distance) / triggerDistance) * runStrength + 8;
+
+        offsetX += nx * push;
+        offsetY += ny * push;
+
+        // Clamp motion so it stays in container
+        const maxLeft = -(noRect.left - containerRect.left - 10);
+        const maxRight = (containerRect.right - noRect.right - 10);
+        const maxUp = -(noRect.top - containerRect.top - 10);
+        const maxDown = (containerRect.bottom - noRect.bottom - 10);
+
+        offsetX = clamp(offsetX, maxLeft, maxRight);
+        offsetY = clamp(offsetY, maxUp, maxDown);
+
+        updateButtonScales();
+      } else {
+        isNear = false;
+      }
+    });
+
+    yesBtn.addEventListener("click", () => {
+      message.textContent = "YAY ❤️ I love you!";
+    });
+
+    noBtn.addEventListener("click", () => {
+      message.textContent = "Nice try 😄";
+    });
+
+    // Initial transform sync
+    updateButtonScales();
+  </script>
+</body>
+</html>

@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Valentine Surprise</title>
+  <style>
+    :root {
+      --bg1: #ff9a9e;
+      --bg2: #fad0c4;
+      --card: rgba(255, 255, 255, 0.2);
+      --text: #ffffff;
+      --btn-yes: #ff4d6d;
+      --btn-no: #6c757d;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--bg1), var(--bg2));
+      overflow: hidden;
+    }
+
+    .container {
+      width: min(92vw, 780px);
+      text-align: center;
+      background: var(--card);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 24px;
+      padding: 50px 24px 80px;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+      position: relative;
+    }
+
+    h1 {
+      color: var(--text);
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      margin-bottom: 36px;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .button-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      min-height: 110px;
+      position: relative;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: none;
+      border-radius: 14px;
+      padding: 14px 30px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #fff;
+      cursor: pointer;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+      transition: transform 0.12s linear, box-shadow 0.2s ease, background 0.25s ease;
+      user-select: none;
+      white-space: nowrap;
+      position: relative;
+      z-index: 2;
+    }
+
+    button:hover {
+      box-shadow: 0 10px 18px rgba(0, 0, 0, 0.25);
+    }
+
+    #yesBtn {
+      background: var(--btn-yes);
+      will-change: transform;
+    }
+
+    #noBtn {
+      background: var(--btn-no);
+      max-width: min(82vw, 560px);
+      text-overflow: ellipsis;
+      overflow: hidden;
+      will-change: transform;
+    }
+
+    .message {
+      margin-top: 24px;
+      color: #fff;
+      font-size: 1.2rem;
+      font-weight: 600;
+      min-height: 1.5em;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+    }
+
+    .magnet-ring {
+      position: fixed;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 1;
+      transform: translate(-50%, -50%) scale(1);
+      background: radial-gradient(circle, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 70%);
+      filter: blur(1px);
+      transition: opacity 0.18s ease;
+    }
+
+    .magnet-active {
+      opacity: 0.75;
+      animation: pulse 1s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%   { transform: translate(-50%, -50%) scale(0.9); }
+      50%  { transform: translate(-50%, -50%) scale(1.15); }
+      100% { transform: translate(-50%, -50%) scale(0.9); }
+    }
+
+    .morph-yes {
+      animation: morphYes 420ms ease;
+      background: var(--btn-yes) !important;
+    }
+
+    @keyframes morphYes {
+      0%   { transform: translate(var(--no-x, 0px), var(--no-y, 0px)) scale(1); }
+      35%  { transform: translate(var(--no-x, 0px), var(--no-y, 0px)) scale(1.18) rotate(-2deg); }
+      70%  { transform: translate(var(--no-x, 0px), var(--no-y, 0px)) scale(0.94) rotate(2deg); }
+      100% { transform: translate(var(--no-x, 0px), var(--no-y, 0px)) scale(1) rotate(0deg); }
+    }
+  </style>
+</head>
+<body>
+  <main class="container" id="container">
+    <h1>Will You Be My Valentine?</h1>
+
+    <div class="button-row">
+      <button id="yesBtn" aria-label="Yes, one hundred percent">100%</button>
+      <button id="noBtn" aria-label="No">No</button>
+    </div>
+
+    <p class="message" id="message"></p>
+  </main>
+
+  <div class="magnet-ring" id="magnetRing"></div>
+
+  <script>
+    const container = document.getElementById("container");
+    const yesBtn = document.getElementById("yesBtn");
+    const noBtn = document.getElementById("noBtn");
+    const message = document.getElementById("message");
+    const magnetRing = document.getElementById("magnetRing");
+
+    const noTexts = [
+      "No",
+      "Nice Try",
+      "Still Going For It",
+      "The Yes Button Is Right There",
+      "Are You Really Wanting This?",
+      "I'm Not Letting You"
+    ];
+
+    const lockedClickTexts = [
+      "Fine",
+      "You really want to click me",
+      "What If I Just..."
+    ];
+
+    let textIndex = 0;
+    let sizeModeActive = false;
+
+    let yesScale = 1;
+    let noScale = 1;
+
+    let offsetX = 0;
+    let offsetY = 0;
+
+    let yesMagX = 0;
+    let yesMagY = 0;
+
+    let mouseX = window.innerWidth / 2;
+    let mouseY = window.innerHeight / 2;
+
+    let isNear = false;
+
+    let countdownStarted = false;
+    let noLocked = false;
+    let lockTimerId = null;
+    let lockedClickCount = 0;
+    let noTurnedIntoYes = false;
+
+    // NEW: hard toggle for magnet system
+    let magnetEnabled = true;
+
+    const triggerDistance = 140;
+    const runStrength = 30;
+
+    const yesGrowStep = 0.08;
+    const noShrinkStep = 0.08;
+    const yesMaxScale = 2.3;
+    const noMinScale = 0.45;
+
+    const magnetRange = 260;
+    const magnetMaxShift = 14;
+    const magnetSmoothing = 0.18;
+
+    function clamp(v, min, max) {
+      return Math.max(min, Math.min(max, v));
+    }
+
+    function setNoText(text) {
+      noBtn.textContent = text;
+      noBtn.setAttribute("aria-label", text);
+    }
+
+    function triggerYesAction() {
+      message.textContent = "YAY ❤️ I love you!";
+      yesBtn.animate(
+        [
+          { transform: `translate(${yesMagX}px, ${yesMagY}px) scale(${yesScale})` },
+          { transform: `translate(${yesMagX}px, ${yesMagY}px) scale(${yesScale * 1.12})` },
+          { transform: `translate(${yesMagX}px, ${yesMagY}px) scale(${yesScale})` }
+        ],
+        { duration: 320, easing: "ease-out" }
+      );
+    }
+
+    function updateButtonTransforms() {
+      noBtn.style.setProperty("--no-x", `${offsetX}px`);
+      noBtn.style.setProperty("--no-y", `${offsetY}px`);
+
+      noBtn.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${noScale})`;
+      yesBtn.style.transform = `translate(${yesMagX}px, ${yesMagY}px) scale(${yesScale})`;
+    }
+
+    function disableMagnetAndResetYes() {
+      magnetEnabled = false;       // fully disable magnet logic
+      yesScale = 1;                // reset size
+      yesMagX = 0;                 // reset position
+      yesMagY = 0;                 // reset position
+      magnetRing.classList.remove("magnet-active");
+    }
+
+    function startLockCountdownIfNeeded() {
+      if (countdownStarted) return;
+      countdownStarted = true;
+
+      lockTimerId = setTimeout(() => {
+        noLocked = true;
+        isNear = false;
+
+        // Reset No button
+        offsetX = 0;
+        offsetY = 0;
+        noScale = 1;
+        setNoText("No");
+
+        // REQUIRED CHANGE:
+        // Reset 100% button to original position + size and turn off magnet.
+        disableMagnetAndResetYes();
+
+        updateButtonTransforms();
+      }, 30000);
+    }
+
+    function handleNoApproachProgression() {
+      startLockCountdownIfNeeded();
+
+      if (textIndex === noTexts.length - 1) {
+        textIndex = 0;
+        setNoText(noTexts[textIndex]);
+        sizeModeActive = true;
+      } else {
+        textIndex++;
+        setNoText(noTexts[textIndex]);
+      }
+
+      if (sizeModeActive) {
+        yesScale = clamp(yesScale + yesGrowStep, 1, yesMaxScale);
+        noScale = clamp(noScale - noShrinkStep, noMinScale, 1);
+      }
+    }
+
+    function updateMagnetEffect() {
+      // If disabled, always stay reset
+      if (!magnetEnabled) {
+        yesMagX += (0 - yesMagX) * magnetSmoothing;
+        yesMagY += (0 - yesMagY) * magnetSmoothing;
+        magnetRing.classList.remove("magnet-active");
+        updateButtonTransforms();
+        return;
+      }
+
+      const maxed = yesScale >= yesMaxScale - 0.0001;
+      const magnetAllowed = maxed && !noLocked;
+
+      if (!magnetAllowed) {
+        yesMagX += (0 - yesMagX) * magnetSmoothing;
+        yesMagY += (0 - yesMagY) * magnetSmoothing;
+        magnetRing.classList.remove("magnet-active");
+        updateButtonTransforms();
+        return;
+      }
+
+      const yesRect = yesBtn.getBoundingClientRect();
+      const yesCenterX = yesRect.left + yesRect.width / 2;
+      const yesCenterY = yesRect.top + yesRect.height / 2;
+
+      const dx = mouseX - yesCenterX;
+      const dy = mouseY - yesCenterY;
+      const dist = Math.hypot(dx, dy);
+
+      if (dist < magnetRange) {
+        const t = (magnetRange - dist) / magnetRange;
+        const strength = t * t;
+        const nx = dx / (dist || 1);
+        const ny = dy / (dist || 1);
+
+        const targetX = nx * magnetMaxShift * strength;
+        const targetY = ny * magnetMaxShift * strength;
+
+        yesMagX += (targetX - yesMagX) * magnetSmoothing;
+        yesMagY += (targetY - yesMagY) * magnetSmoothing;
+
+        const ringX = yesCenterX + (dx * 0.35);
+        const ringY = yesCenterY + (dy * 0.35);
+        magnetRing.style.left = `${ringX}px`;
+        magnetRing.style.top = `${ringY}px`;
+        magnetRing.classList.add("magnet-active");
+      } else {
+        yesMagX += (0 - yesMagX) * magnetSmoothing;
+        yesMagY += (0 - yesMagY) * magnetSmoothing;
+        magnetRing.classList.remove("magnet-active");
+      }
+
+      updateButtonTransforms();
+    }
+
+    window.addEventListener("mousemove", (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+
+      if (noLocked) {
+        updateMagnetEffect();
+        return;
+      }
+
+      const noRect = noBtn.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+
+      const btnCenterX = noRect.left + noRect.width / 2;
+      const btnCenterY = noRect.top + noRect.height / 2;
+
+      const dx = btnCenterX - e.clientX;
+      const dy = btnCenterY - e.clientY;
+      const distance = Math.hypot(dx, dy);
+
+      if (distance < triggerDistance) {
+        if (!isNear) {
+          handleNoApproachProgression();
+          isNear = true;
+        }
+
+        const nx = dx / (distance || 1);
+        const ny = dy / (distance || 1);
+        const push = ((triggerDistance - distance) / triggerDistance) * runStrength + 8;
+
+        offsetX += nx * push;
+        offsetY += ny * push;
+
+        const maxLeft = -(noRect.left - containerRect.left - 10);
+        const maxRight = (containerRect.right - noRect.right - 10);
+        const maxUp = -(noRect.top - containerRect.top - 10);
+        const maxDown = (containerRect.bottom - noRect.bottom - 10);
+
+        offsetX = clamp(offsetX, maxLeft, maxRight);
+        offsetY = clamp(offsetY, maxUp, maxDown);
+
+        updateButtonTransforms();
+      } else {
+        isNear = false;
+      }
+
+      updateMagnetEffect();
+    });
+
+    yesBtn.addEventListener("click", triggerYesAction);
+
+    noBtn.addEventListener("click", () => {
+      if (!noLocked) {
+        message.textContent = "Nice try 😄";
+        return;
+      }
+
+      if (!noTurnedIntoYes) {
+        if (lockedClickCount < 3) {
+          setNoText(lockedClickTexts[lockedClickCount]);
+          lockedClickCount++;
+          return;
+        }
+
+        noTurnedIntoYes = true;
+        setNoText("Yes");
+        noBtn.classList.add("morph-yes");
+        noBtn.style.background = "var(--btn-yes)";
+        noBtn.addEventListener("animationend", () => noBtn.classList.remove("morph-yes"), { once: true });
+        return;
+      }
+
+      triggerYesAction();
+    });
+
+    function animate() {
+      updateMagnetEffect();
+      requestAnimationFrame(animate);
+    }
+    animate();
+
+    updateButtonTransforms();
+  </script>
+</body>
+</html>
