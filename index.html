@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Valentine Surprise</title>
+  <style>
+    :root {
+      --bg1: #ff9a9e;
+      --bg2: #fad0c4;
+      --card: rgba(255, 255, 255, 0.2);
+      --text: #ffffff;
+      --btn-yes: #ff4d6d;
+      --btn-no: #6c757d;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--bg1), var(--bg2));
+      overflow: hidden;
+      color: #fff;
+    }
+
+    .container {
+      width: min(92vw, 780px);
+      text-align: center;
+      background: var(--card);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 24px;
+      padding: 50px 24px 80px;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+      position: relative;
+      z-index: 3;
+      opacity: 1;
+      transition: opacity 0.9s ease, transform 0.9s ease;
+    }
+
+    .container.fade-out {
+      opacity: 0;
+      transform: translateY(-10px) scale(0.98);
+      pointer-events: none;
+    }
+
+    h1 {
+      color: var(--text);
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      margin-bottom: 36px;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .button-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      min-height: 110px;
+      position: relative;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: none;
+      border-radius: 14px;
+      padding: 14px 30px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #fff;
+      cursor: pointer;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+      transition: transform 0.12s linear, box-shadow 0.2s ease, background 0.25s ease;
+      user-select: none;
+      white-space: nowrap;
+      position: relative;
+      z-index: 2;
+    }
+
+    button:hover {
+      box-shadow: 0 10px 18px rgba(0, 0, 0, 0.25);
+    }
+
+    #yesBtn {
+      background: var(--btn-yes);
+      will-change: transform;
+    }
+
+    #noBtn {
+      background: var(--btn-no);
+      max-width: min(82vw, 560px);
+      text-overflow: ellipsis;
+      overflow: hidden;
+      will-change: transform;
+    }
+
+    .message {
+      margin-top: 24px;
+      color: #fff;
+      font-size: 1.2rem;
+      font-weight: 600;
+      min-height: 1.5em;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+    }
+
+    .magnet-ring {
+      position: fixed;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 4;
+      transform: translate(-50%, -50%) scale(1);
+      background: radial-gradient(circle, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 70%);
+      filter: blur(1px);
+      transition: opacity 0.18s ease;
+    }
+
+    .magnet-active {
+      opacity: 0.75;
+      animation: pulse 1s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%   { transform: translate(-50%, -50%) scale(0.9); }
+      50%  { transform: translate(-50%, -50%) scale(1.15); }
+      100% { transform: translate(-50%, -50%) scale(0.9); }
+    }
+
+    .morph-yes {
+      animation: morphYes 420ms ease;
+      background: var(--btn-yes) !important;
+    }
+
+    @keyframes morphYes {
+      0%   { transform: translate(var(--no-x, 0px), var(--no-y, 0px)) scale(1); }
+      35%  { transform: translate(var(--no-x, 0px), var(--no-y, 0px)) scale(1.18) rotate(-2deg); }
+      70%  { transform: translate(var(--no-x, 0px), var(--no-y, 0px)) scale(0.94) rotate(2deg); }
+      100% { transform: translate(var(--no-x, 0px), var(--no-y, 0px)) scale(1) rotate(0deg); }
+    }
+
+    .hearts-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 5;
+      overflow: hidden;
+    }
+
+    .heart {
+      position: absolute;
+      bottom: -40px;
+      font-size: 18px;
+      opacity: 0.9;
+      animation: floatUp linear forwards;
+      filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.15));
+    }
+
+    @keyframes floatUp {
+      0% {
+        transform: translateY(0) translateX(0) scale(0.8) rotate(0deg);
+        opacity: 0;
+      }
+      10% {
+        opacity: 0.95;
+      }
+      100% {
+        transform: translateY(-120vh) translateX(var(--drift, 0px)) scale(1.35) rotate(20deg);
+        opacity: 0;
+      }
+    }
+
+    .success-screen {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      z-index: 6;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1s ease;
+      background: linear-gradient(150deg, rgba(255, 121, 151, 0.35), rgba(255, 78, 120, 0.25));
+      backdrop-filter: blur(4px);
+    }
+
+    .success-screen.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .success-card {
+      width: min(92vw, 700px);
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 26px;
+      padding: 26px 20px 30px;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.22);
+      transform: translateY(12px) scale(0.98);
+      opacity: 0;
+      transition: transform 0.8s ease, opacity 0.8s ease;
+    }
+
+    .success-screen.show .success-card {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+
+    .success-photo {
+      width: min(100%, 460px);
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      border-radius: 18px;
+      border: 2px solid rgba(255, 255, 255, 0.45);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.25);
+      margin-bottom: 16px;
+      background: rgba(255,255,255,0.2);
+    }
+
+    .success-names {
+      font-size: clamp(2rem, 5.5vw, 3.4rem);
+      font-weight: 900;
+      line-height: 1.05;
+      margin-bottom: 12px;
+      text-shadow: 0 2px 9px rgba(0, 0, 0, 0.25);
+    }
+
+    .success-message {
+      font-size: clamp(1.1rem, 2.8vw, 1.7rem);
+      font-weight: 600;
+      line-height: 1.35;
+      max-width: 28ch;
+      margin: 0 auto;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .together-time-label {
+      margin-top: 16px;
+      font-size: clamp(0.95rem, 2.2vw, 1.1rem);
+      opacity: 0.9;
+      letter-spacing: 0.4px;
+    }
+
+    .together-time {
+      margin-top: 6px;
+      font-size: clamp(1.05rem, 2.6vw, 1.4rem);
+      font-weight: 700;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+  <main class="container" id="container">
+    <h1>Will You Be My Valentine?</h1>
+
+    <div class="button-row">
+      <button id="yesBtn" aria-label="Yes, one hundred percent">100%</button>
+      <button id="noBtn" aria-label="No">No</button>
+    </div>
+
+    <p class="message" id="message"></p>
+  </main>
+
+  <div class="magnet-ring" id="magnetRing"></div>
+  <div class="hearts-layer" id="heartsLayer"></div>
+
+  <section class="success-screen" id="successScreen" aria-hidden="true">
+    <div class="success-card">
+      <img
+        class="success-photo"
+        src="https://lh3.googleusercontent.com/sitesv/APaQ0SS7Qvahv2_kA9AXBcWAaTNUAg4IOqXUuOr-RpI_xQeo5drSa8BNnmYZvFRvKXsfZNiSfz_S5JIyZihPtqaWOLn9DJvrRfc0IJl-gZyhW1E2ox4bELhLce6Of9qCvjXQtZiReoJonBnC5B1deHN84luh1cV97kpENQpXmoS0bud42dqfeK7W-XEiZus=w1280"
+        alt="Katie and Tyson"
+      />
+      <h2 class="success-names">Tyson & Katie</h2>
+      <p class="success-message">I love you Katie for eternity and then some!</p>
+      <p class="together-time-label">Time Together</p>
+      <p class="together-time" id="togetherTime">0y 0m 0d 00:00:00</p>
+    </div>
+  </section>
+
+  <script>
+    const container = document.getElementById("container");
+    const yesBtn = document.getElementById("yesBtn");
+    const noBtn = document.getElementById("noBtn");
+    const message = document.getElementById("message");
+    const magnetRing = document.getElementById("magnetRing");
+    const heartsLayer = document.getElementById("heartsLayer");
+    const successScreen = document.getElementById("successScreen");
+    const togetherTime = document.getElementById("togetherTime");
+
+    const noTexts = [
+      "No",
+      "What Are You Doing?",
+      "This Is The Wrong Button",
+      "Still Going For It?",
+      "The Yes Button Is Right There",
+      "Are You Really Wanting This?",
+      "Too Bad",
+      "I'm Not Letting You",
+      "What If I Shrink Every Time You Try?",
+      "Smaller",
+      "And smaller",
+      "Until",
+      "I",
+      "Disappear"
+    ];
+
+    const lockedClickTexts = [
+      "Fine",
+      "You really want to click me",
+      "What If I Just..."
+    ];
+
+    let textIndex = 0;
+    let sizeModeActive = false;
+
+    let yesScale = 1;
+    let noScale = 1;
+
+    let offsetX = 0;
+    let offsetY = 0;
+
+    let yesMagX = 0;
+    let yesMagY = 0;
+
+    let mouseX = window.innerWidth / 2;
+    let mouseY = window.innerHeight / 2;
+
+    let isNear = false;
+
+    let countdownStarted = false;
+    let noLocked = false;
+    let lockedClickCount = 0;
+    let noTurnedIntoYes = false;
+
+    let magnetEnabled = true;
+    let successStarted = false;
+    let togetherTimerId = null;
+
+    const triggerDistance = 100;
+    const runStrength = 30;
+
+    const yesGrowStep = 0.15;
+    const noShrinkStep = 0.08;
+    const yesMaxScale = 2.5;
+    const noMinScale = 0.1;
+
+    const magnetRange = 360;
+    const magnetMaxShift = 20;
+    const magnetSmoothing = 0.18;
+
+    function clamp(v, min, max) {
+      return Math.max(min, Math.min(max, v));
+    }
+
+    function pad2(n) {
+      return String(n).padStart(2, "0");
+    }
+
+    function setNoText(text) {
+      noBtn.textContent = text;
+      noBtn.setAttribute("aria-label", text);
+    }
+
+    function updateButtonTransforms() {
+      noBtn.style.setProperty("--no-x", `${offsetX}px`);
+      noBtn.style.setProperty("--no-y", `${offsetY}px`);
+      noBtn.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${noScale})`;
+      yesBtn.style.transform = `translate(${yesMagX}px, ${yesMagY}px) scale(${yesScale})`;
+    }
+
+    function disableMagnetAndResetYes() {
+      magnetEnabled = false;
+      yesScale = 1;
+      yesMagX = 0;
+      yesMagY = 0;
+      magnetRing.classList.remove("magnet-active");
+    }
+
+    function startLockCountdownIfNeeded() {
+      if (countdownStarted) return;
+      countdownStarted = true;
+
+      setTimeout(() => {
+        noLocked = true;
+        isNear = false;
+
+        offsetX = 0;
+        offsetY = 0;
+        noScale = 1;
+        setNoText("Ok");
+
+        disableMagnetAndResetYes();
+        updateButtonTransforms();
+      }, 26000); // change to 30000 for 30 seconds
+    }
+
+    function handleNoApproachProgression() {
+      startLockCountdownIfNeeded();
+
+      if (textIndex === noTexts.length - 1) {
+        textIndex = 0;
+        sizeModeActive = true;
+        setNoText("No");
+      } else if (!sizeModeActive) {
+        textIndex++;
+        setNoText(noTexts[textIndex]);
+      } else {
+        setNoText("No");
+      }
+
+      if (sizeModeActive) {
+        yesScale = clamp(yesScale + yesGrowStep, 1, yesMaxScale);
+        noScale = clamp(noScale - noShrinkStep, noMinScale, 1);
+      }
+    }
+
+    function updateMagnetEffect() {
+      if (!magnetEnabled || successStarted) {
+        if (yesMagX !== 0 || yesMagY !== 0) {
+          yesMagX += (0 - yesMagX) * magnetSmoothing;
+          yesMagY += (0 - yesMagY) * magnetSmoothing;
+        }
+        magnetRing.classList.remove("magnet-active");
+        updateButtonTransforms();
+        return;
+      }
+
+      const maxed = yesScale >= yesMaxScale - 0.0001;
+      const magnetAllowed = maxed && !noLocked && sizeModeActive && magnetEnabled;
+
+      if (!magnetAllowed) {
+        yesMagX += (0 - yesMagX) * magnetSmoothing;
+        yesMagY += (0 - yesMagY) * magnetSmoothing;
+        magnetRing.classList.remove("magnet-active");
+        updateButtonTransforms();
+        return;
+      }
+
+      const yesRect = yesBtn.getBoundingClientRect();
+      const yesCenterX = yesRect.left + yesRect.width / 2;
+      const yesCenterY = yesRect.top + yesRect.height / 2;
+
+      const dx = mouseX - yesCenterX;
+      const dy = mouseY - yesCenterY;
+      const dist = Math.hypot(dx, dy);
+
+      if (dist < magnetRange) {
+        const t = (magnetRange - dist) / magnetRange;
+        const strength = t * t;
+        const nx = dx / (dist || 1);
+        const ny = dy / (dist || 1);
+
+        const targetX = nx * magnetMaxShift * strength;
+        const targetY = ny * magnetMaxShift * strength;
+
+        yesMagX += (targetX - yesMagX) * magnetSmoothing;
+        yesMagY += (targetY - yesMagY) * magnetSmoothing;
+
+        const ringX = yesCenterX + dx * 0.35;
+        const ringY = yesCenterY + dy * 0.35;
+        magnetRing.style.left = `${ringX}px`;
+        magnetRing.style.top = `${ringY}px`;
+        magnetRing.classList.add("magnet-active");
+      } else {
+        yesMagX += (0 - yesMagX) * magnetSmoothing;
+        yesMagY += (0 - yesMagY) * magnetSmoothing;
+        magnetRing.classList.remove("magnet-active");
+      }
+
+      updateButtonTransforms();
+    }
+
+    function getDurationParts(fromDate, toDate = new Date()) {
+      let start = new Date(fromDate);
+      let end = new Date(toDate);
+
+      if (end < start) {
+        return { years: 0, months: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };
+      }
+
+      let years = end.getFullYear() - start.getFullYear();
+      let months = end.getMonth() - start.getMonth();
+      let days = end.getDate() - start.getDate();
+      let hours = end.getHours() - start.getHours();
+      let minutes = end.getMinutes() - start.getMinutes();
+      let seconds = end.getSeconds() - start.getSeconds();
+
+      if (seconds < 0) { seconds += 60; minutes--; }
+      if (minutes < 0) { minutes += 60; hours--; }
+      if (hours < 0) { hours += 24; days--; }
+
+      if (days < 0) {
+        const prevMonthDays = new Date(end.getFullYear(), end.getMonth(), 0).getDate();
+        days += prevMonthDays;
+        months--;
+      }
+
+      if (months < 0) {
+        months += 12;
+        years--;
+      }
+
+      return { years, months, days, hours, minutes, seconds };
+    }
+
+    function startTogetherCounter() {
+      const since = new Date(2023, 2, 2, 0, 0, 0); // March 02, 2023
+
+      function render() {
+        const t = getDurationParts(since, new Date());
+        togetherTime.textContent =
+          `${t.years}y ${t.months}m ${t.days}d ${pad2(t.hours)}:${pad2(t.minutes)}:${pad2(t.seconds)}`;
+      }
+
+      render();
+      if (togetherTimerId) clearInterval(togetherTimerId);
+      togetherTimerId = setInterval(render, 1000);
+    }
+
+    function spawnHearts(count = 40) {
+      for (let i = 0; i < count; i++) {
+        const heart = document.createElement("span");
+        heart.className = "heart";
+        heart.textContent = Math.random() < 0.5 ? "❤" : "💖";
+
+        const left = Math.random() * 100;
+        const duration = 2.8 + Math.random() * 2.4;
+        const delay = Math.random() * 1.2;
+        const drift = (Math.random() * 120 - 60).toFixed(1) + "px";
+        const size = 14 + Math.random() * 18;
+
+        heart.style.left = `${left}vw`;
+        heart.style.animationDuration = `${duration}s`;
+        heart.style.animationDelay = `${delay}s`;
+        heart.style.setProperty("--drift", drift);
+        heart.style.fontSize = `${size}px`;
+
+        heartsLayer.appendChild(heart);
+        heart.addEventListener("animationend", () => heart.remove());
+      }
+    }
+
+    function runSuccessSequence() {
+      if (successStarted) return;
+      successStarted = true;
+
+      magnetEnabled = false;
+      noLocked = true;
+      magnetRing.classList.remove("magnet-active");
+
+      message.textContent = "Forever starts now 💞";
+      yesBtn.animate(
+        [
+          { transform: `translate(${yesMagX}px, ${yesMagY}px) scale(${yesScale})` },
+          { transform: `translate(${yesMagX}px, ${yesMagY}px) scale(${Math.max(yesScale * 1.12, 1.12)})` },
+          { transform: `translate(0px, 0px) scale(1)` }
+        ],
+        { duration: 420, easing: "ease-out" }
+      );
+
+      yesScale = 1;
+      yesMagX = 0;
+      yesMagY = 0;
+      updateButtonTransforms();
+
+      spawnHearts(44);
+      setTimeout(() => container.classList.add("fade-out"), 180);
+      setTimeout(() => {
+        successScreen.classList.add("show");
+        successScreen.setAttribute("aria-hidden", "false");
+        startTogetherCounter();
+      }, 900);
+
+      setTimeout(() => spawnHearts(24), 1400);
+    }
+
+    window.addEventListener("mousemove", (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+
+      if (successStarted) return;
+
+      if (noLocked) {
+        updateMagnetEffect();
+        return;
+      }
+
+      const noRect = noBtn.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+
+      const btnCenterX = noRect.left + noRect.width / 2;
+      const btnCenterY = noRect.top + noRect.height / 2;
+
+      const dx = btnCenterX - e.clientX;
+      const dy = btnCenterY - e.clientY;
+      const distance = Math.hypot(dx, dy);
+
+      if (distance < triggerDistance) {
+        if (!isNear) {
+          handleNoApproachProgression();
+          isNear = true;
+        }
+
+        const nx = dx / (distance || 1);
+        const ny = dy / (distance || 1);
+        const push = ((triggerDistance - distance) / triggerDistance) * runStrength + 8;
+
+        offsetX += nx * push;
+        offsetY += ny * push;
+
+        const maxLeft = -(noRect.left - containerRect.left - 10);
+        const maxRight = (containerRect.right - noRect.right - 10);
+        const maxUp = -(noRect.top - containerRect.top - 10);
+        const maxDown = (containerRect.bottom - noRect.bottom - 10);
+
+        offsetX = clamp(offsetX, maxLeft, maxRight);
+        offsetY = clamp(offsetY, maxUp, maxDown);
+
+        noBtn.style.setProperty("--no-x", `${offsetX}px`);
+        noBtn.style.setProperty("--no-y", `${offsetY}px`);
+        noBtn.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${noScale})`;
+      } else {
+        isNear = false;
+      }
+
+      updateMagnetEffect();
+    });
+
+    yesBtn.addEventListener("click", runSuccessSequence);
+
+    noBtn.addEventListener("click", () => {
+      if (successStarted) return;
+
+        if (!noLocked) {
+        message.textContent = "Nice try 😄";
+
+        // clear after 3 seconds (only if still the same message)
+        setTimeout(() => {
+            if (message.textContent === "Nice try 😄") {
+            message.textContent = "";
+            }
+        }, 1500);
+
+        return;
+        }
+
+
+      if (!noTurnedIntoYes) {
+        if (lockedClickCount < 3) {
+          setNoText(lockedClickTexts[lockedClickCount]);
+          lockedClickCount++;
+          return;
+        }
+
+        noTurnedIntoYes = true;
+        setNoText("Yes");
+        noBtn.classList.add("morph-yes");
+        noBtn.style.background = "var(--btn-yes)";
+        noBtn.addEventListener("animationend", () => noBtn.classList.remove("morph-yes"), { once: true });
+        return;
+      }
+
+      runSuccessSequence();
+    });
+
+    function animate() {
+      if (!successStarted) {
+        updateMagnetEffect();
+        requestAnimationFrame(animate);
+      }
+    }
+    animate();
+
+    updateButtonTransforms();
+  </script>
+</body>
+</html>
